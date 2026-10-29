@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>剪刀石頭布終極大對決</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d35;--panel2:#1d2947;--text:#f4f6ff;--muted:#aab5d4;--accent:#8b7cff;--good:#48d6a0;--bad:#ff7185;--gold:#ffd166}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#26345f 0%,var(--bg) 60%);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);padding:24px}
+main{max-width:900px;margin:auto}.hero{text-align:center;padding:24px 12px 18px}.eyebrow{color:#b7adff;letter-spacing:.15em;font-size:.8rem;font-weight:800}.hero h1{font-size:clamp(2rem,6vw,3.5rem);margin:.4rem 0}.hero p{color:var(--muted);margin:.4rem}
+.panel{background:rgba(21,29,53,.94);border:1px solid #354268;border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 14px 40px #0003}.setup{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.field label{display:block;color:var(--muted);font-size:.9rem;margin-bottom:7px}.field input,.field select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #46547c;background:#0d1428;color:var(--text);font:inherit}
+button{border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer;transition:transform .12s,filter .12s}button:hover{filter:brightness(1.1);transform:translateY(-1px)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}.primary{background:var(--accent);color:white}.choice{background:var(--panel2);border:1px solid #485987;color:white;font-size:1.15rem;min-height:82px}.choice span{display:block;font-size:2rem;margin-bottom:3px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#0d1428;border-radius:14px;padding:14px;text-align:center}.stat strong{display:block;font-size:1.7rem}.stat small{color:var(--muted)}.battlehead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}.hp{font-size:1.3rem;letter-spacing:.1em}.score{color:var(--muted)}.message{min-height:70px;padding:16px;border-radius:14px;background:#0d1428;color:#dce3ff;line-height:1.6;margin:16px 0}.message.good{border:1px solid #287b65}.message.bad{border:1px solid #8d3e53}.message.gold{border:1px solid #9c7b32}.log{max-height:180px;overflow:auto;color:var(--muted);font-size:.9rem}.log p{margin:6px 0}.hidden{display:none!important}.muted{color:var(--muted)}.footer{text-align:center;color:var(--muted);font-size:.85rem;padding:18px}
+@media(max-width:650px){body{padding:12px}.panel{padding:16px}.setup{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.choices{gap:8px}.choice{padding:10px 4px;font-size:1rem}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero"><div class="eyebrow">ADVENTURER'S ARENA</div><h1>✊✋✌️ 剪刀石頭布</h1><p>終極大對決 · 先拿下 3 勝，或小心生命值歸零！</p></header>
+<section class="panel" id="setup">
+<h2>🧙 冒險者登入</h2><div class="setup">
+<div class="field"><label for="playerName">冒險者名字</label><input id="playerName" maxlength="24" placeholder="輸入你的名字" value=""></div>
+<div class="field"><label for="equipment">選擇裝備</label><select id="equipment"><option>黃金鍵盤</option><option>魔法魔杖</option><option>其他裝備</option></select></div>
+<button class="primary" id="start">開始冒險</button></div>
+<p class="muted" id="welcome">選擇你的裝備，準備迎接挑戰！</p>
+</section>
+<section class="panel hidden" id="game">
+<div class="battlehead"><div><h2 id="roundTitle">⚔️ 第 1 回合</h2><div class="score" id="score">你 0 勝｜電腦 0 勝</div></div><div><div class="hp" id="hp">❤️❤️❤️</div><small class="muted">生命值</small></div></div>
+<div class="choices">
+<button class="choice" data-choice="剪刀"><span>✌️</span>剪刀</button>
+<button class="choice" data-choice="石頭"><span>✊</span>石頭</button>
+<button class="choice" data-choice="布"><span>✋</span>布</button>
+</div>
+<div class="message" id="message" aria-live="polite">選擇你的出拳！</div>
+<div class="battlehead"><span class="muted" id="skill">技能：準備中</span><button id="quit">放棄本場</button></div>
+<h3>📜 本場紀錄</h3><div class="log" id="log"></div>
+</section>
+<section class="panel">
+<h2>📊 冒險者累計戰績</h2><div class="stats">
+<div class="stat"><strong id="games">0</strong><small>完成場數</small></div><div class="stat"><strong id="wins">0</strong><small>勝場</small></div><div class="stat"><strong id="losses">0</strong><small>敗場</small></div><div class="stat"><strong id="draws">0</strong><small>平手回合</small></div>
+</div>
+<div class="battlehead" style="margin-top:18px"><span class="muted" id="endText">登入後即可開始遊戲。</span><button class="primary hidden" id="again">再玩一場</button></div>
+</section>
+<div class="footer">祝你冒險順利！每一場都是新的挑戰。</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const options=["剪刀","石頭","布"];
+const emoji={"剪刀":"✌️","石頭":"✊","布":"✋"};
+let name="",equipment="黃金鍵盤",playerWins=0,computerWins=0,round=1,hp=3,shield=false,active=false;
+let totalGames=0,totalWins=0,totalLosses=0,totalDraws=0;
+function logLine(t){const p=document.createElement("p");p.textContent=t;$("log").prepend(p)}
+function update(){
+ $("roundTitle").textContent=`⚔️ 第 ${round} 回合`;
+ $("score").textContent=`你 ${playerWins} 勝｜電腦 ${computerWins} 勝`;
+ $("hp").textContent="❤️".repeat(Math.max(0,hp))+"🖤".repeat(3-Math.max(0,hp));
+ $("games").textContent=totalGames;$("wins").textContent=totalWins;$("losses").textContent=totalLosses;$("draws").textContent=totalDraws;
+ $("skill").textContent=equipment==="黃金鍵盤"?"✨ 黃金鍵盤：勝利時有 20% 機率獲得雙倍勝場":equipment==="魔法魔杖"?(shield?"🪄 魔法魔杖：本場尚可抵擋一次敗北":"🪄 魔法魔杖：本場防護已使用"):"🎒 其他裝備：沒有特殊技能";
+}
+function finish(kind){
+ active=false;document.querySelectorAll(".choice").forEach(b=>b.disabled=true);$("quit").disabled=true;$("again").classList.remove("hidden");
+ if(kind==="win"){totalGames++;totalWins++;$("message").className="message good";$("message").textContent=`🏆 恭喜 ${name} 獲勝！本場勝利！`;$("endText").textContent="太棒了！你贏下這場挑戰。"}
+ else if(kind==="loss"){totalGames++;totalLosses++;$("message").className="message bad";$("message").textContent="💻 很可惜，你輸掉了這場挑戰！";$("endText").textContent="別氣餒，準備好就再挑戰一次。"}
+ else {$("message").className="message";$("message").textContent="你選擇離開本場挑戰，本場不計入完成場次。";$("endText").textContent="本場已放棄，可以重新開始。"}
+ update();
+}
+function startRound(){
+ playerWins=0;computerWins=0;round=1;hp=3;shield=equipment==="魔法魔杖";active=true;
+ $("game").classList.remove("hidden");$("again").classList.add("hidden");$("quit").disabled=false;$("log").replaceChildren();
+ $("message").className="message";$("message").textContent=`歡迎勇敢的冒險者【${name}】！裝備【${equipment}】，出拳吧！`;
+ document.querySelectorAll(".choice").forEach(b=>b.disabled=false);
+ $("endText").textContent="對決進行中！";update();
+}
+function play(player){
+ if(!active)return;
+ const computer=options[Math.floor(Math.random()*3)];
+ let msg=`你出了${emoji[player]} ${player}，電腦出了${emoji[computer]} ${computer}。`;
+ let cls="message";
+ if(player===computer){totalDraws++;msg+=" 🤝 平手！雙方都沒有得分。"}
+ else if((player==="剪刀"&&computer==="布")||(player==="石頭"&&computer==="剪刀")||(player==="布"&&computer==="石頭")){
+  let points=1;if(equipment==="黃金鍵盤"&&Math.random()<.2){points=2;msg+=" ✨ 黃金鍵盤發動！本回合獲得雙倍勝場！";cls+=" gold"}
+  playerWins+=points;msg+=` 🎉 你贏了！增加 ${points} 勝！`;cls=cls.includes("gold")?cls:"message good";
+ }else{
+  computerWins++;
+  if(shield){shield=false;msg+=" 🪄 魔法魔杖發動！抵擋了這次敗北，不扣生命！"}
+  else{hp--;msg+=" 💥 電腦贏了！你失去 1 點生命值。"}
+  cls="message bad";
+ }
+ $("message").className=cls;$("message").textContent=msg;logLine(`第 ${round} 回合：${msg}`);round++;update();
+ if(playerWins>=3)finish("win");else if(hp<=0||computerWins>=3)finish("loss");
+}
+$("start").addEventListener("click",()=>{name=$("playerName").value.trim()||"無名冒險者";equipment=$("equipment").value;$("welcome").textContent=`系統廣播：歡迎勇敢的冒險者【${name}】！你的裝備是【${equipment}】，冒險即將開始！`;$("setup").classList.add("hidden");startRound()});
+document.querySelectorAll(".choice").forEach(b=>b.addEventListener("click",()=>play(b.dataset.choice)));
+$("quit").addEventListener("click",()=>{if(active)finish("quit")});
+$("again").addEventListener("click",startRound);
+</script>
+</body>
+</html>
